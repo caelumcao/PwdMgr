@@ -50,7 +50,6 @@ class PwdMgr:
         self.aes = None
         self.pwd_list = {}
         self.pwd_list_saved = {}
-        self.init_pwd_list()
 
     def set_key(self, key):
         self.aes = AESCrypto(key)
@@ -79,11 +78,18 @@ class PwdMgr:
         return aes.decrypt(base64.b64decode(str))
 
     def init_pwd_list(self):
-        with open(self.filename, 'r') as f:
-            content = f.read()
+        try:
+            with open(self.filename, 'r') as f:
+                content = f.read()
+        except IOError:
+            content = ""
         if content and content != '':
-            self.pwd_list = json.loads(content)
+            try:
+                self.pwd_list = json.loads(content)
+            except ValueError:
+                return False
             self.pwd_list_saved = copy.deepcopy(self.pwd_list)
+        return True
 
     def save_pwd_list(self):
         if len(self.pwd_list) == 0:
@@ -385,6 +391,9 @@ class OperationMgr:
 def main():
     print_prompt(profile)
     pwd_mgr = PwdMgr()
+    if not pwd_mgr.init_pwd_list():
+        print u"告诉您一个不幸的消息，密码数据已被损坏，请删除pwd文件重新使用"
+        exit_sys()
     ret = pwd_mgr.check_first_use()
     if ret == 1:
         key = read_key()
