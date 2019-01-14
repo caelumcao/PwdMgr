@@ -93,7 +93,12 @@ class PwdMgr:
 
     def save_pwd_list(self):
         if len(self.pwd_list) == 0:
-            self.add_item('0', 'python', PwdMgr.magic_pwd, 'verify key')
+            self.pwd_list['0'] = {
+                'name': '0',
+                'account': 'python',
+                'pwd': self.encrypt_str(PwdMgr.magic_pwd),
+                'desc': 'verify key',
+            }
         content = json.dumps(self.pwd_list, ensure_ascii=False)
         with open(self.filename, 'w') as f:
             f.write(content.encode('utf-8'))
@@ -110,6 +115,8 @@ class PwdMgr:
             item['pwd'] = self.encrypt_str(pwd)
 
     def add_item(self, name, account, pwd, desc):
+        if name == "0":
+            return
         if name in self.pwd_list:
             print u'添加失败，[' + name + u'] 已经存在'
             return False
@@ -353,12 +360,15 @@ class OperationMgr:
         if desc == "0":
             print_prompt(cancel_msg(title))
             return
-        self.pwd_mgr.add_item(name, account, pwd, desc)
+
+        if add_or_update == "add":
+            self.pwd_mgr.add_item(name, account, pwd, desc)
+        elif add_or_update == "update":
+            self.pwd_mgr.update_item(name, pwd, account, desc)
         print_prompt(ok_msg(title))
 
     def add_item(self):
-        if self.write_item("add"):
-            print_prompt(ok_msg(u"添加密码项"))
+        self.write_item("add")
 
     def update_item(self):
         self.write_item("update")
